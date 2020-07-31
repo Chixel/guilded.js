@@ -3,7 +3,6 @@ var util = require('util');
 const axios = require("axios");
 const uuid = require("uuid-random");
 const WebSocket = require('ws');
-const sync = require('sync');
 
 const Message = require('./Message.js');
 const ChannelManager = require('./ChannelManager.js')

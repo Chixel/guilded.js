@@ -2,7 +2,7 @@
   "name": "guilded.js",
   "version": "1.0.1",
   "description": "A wrapper for the private guilded API",
-  "main": "/Guilded.js",
+  "main": "./src/Guilded.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

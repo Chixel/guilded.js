@@ -1,0 +1,19 @@
+{
+  "name": "guilded.js",
+  "version": "1.0.0",
+  "description": "A wrapper for the private guilded API",
+  "main": "/Guilded.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Chixel/guilded.js.git"
+  },
+  "author": "ChixelRT",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Chixel/guilded.js/issues"
+  },
+  "homepage": "https://github.com/Chixel/guilded.js#readme"
+}

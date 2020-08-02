@@ -1,19 +1,19 @@
 const BaseManager = require('./BaseManager.js');
-const Channel = require('./Channel.js');
-const axios = require("axios");
+const Team = require('./Team.js');
+const axios = require('axios');
 
-class ChannelManager extends BaseManager {
+class TeamManager extends BaseManager {
     constructor(client) {
         super(client);
     }
 
-    async add(channelId, team) {
-        var existing = this.cache.get(channelId);
+    async add(data) {
+        var existing = this.cache.get(data.teamId);
         if(existing) return existing;
 
         var config = {
             method: 'get',
-            url: 'https://api.guilded.gg/content/route/metadata?route=//channels/'+ channelId +'/chat',
+            url: 'https://api.guilded.gg/teams/'+ data.teamId,
             headers: { 
             'Content-Type': 'application/json', 
             'Cookie': this.client.cookies
@@ -25,9 +25,9 @@ class ChannelManager extends BaseManager {
         return axios(config)
             .then(function (response) {
                 //console.log(JSON.stringify(response.data));
-                var channel = new Channel(self.client, response.data.metadata.channel, team);
-                self.cache.add(channelId, channel);
-                return channel;
+                var team = new Team(self.client, response.data.team);
+                self.cache.add(data.teamId, team);
+                return team;
 
             })
             .catch(function (error) {
@@ -36,4 +36,4 @@ class ChannelManager extends BaseManager {
     }
 }
 
-module.exports = ChannelManager;
+module.exports = TeamManager;

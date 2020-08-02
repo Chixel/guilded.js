@@ -4,13 +4,14 @@ const axios = require("axios");
 const uuid = require("uuid-random");
 const WebSocket = require('ws');
 
-const Message = require('./Message.js');
 const ChannelManager = require('./ChannelManager.js')
+const TeamManager = require('./TeamManager.js')
 
 class GuildedClient {
     constructor() {
         this.cookies = "";
         this.channels = new ChannelManager(this);
+        this.teams = new TeamManager(this);
     }
   
     login(email, password) {
@@ -62,14 +63,7 @@ class GuildedClient {
                     if(msg.length<3) return;
 
                     msg = JSON.parse(msg);
-
-                    if( msg[0] == "ChatMessageCreated") {
-                        self.emit('message', new Message(self, msg[1]));
-                    }
-                    if( msg[0] == "ChatMessageReactionAdded") {
-                        self.emit('reactionAdded', msg[1]);
-                    }
-
+                    self.MessageReceived(msg);
                 });
 
                 self.ws.on('close', function close(data) {
@@ -81,6 +75,22 @@ class GuildedClient {
                 console.log(error.message, "error");
             });;
 
+    }
+
+    MessageReceived( message ) {
+        if( message[0] == "ChatMessageCreated") {
+            this.teams.add(message[1]).then((team) => {
+                team.channels.add(message[1].channelId, team).then((channel) => {
+                    channel.messages.add(message[1], channel);
+                });
+                this.channels.add(message[1].channelId, team).then((channel) => {
+                    this.emit('message', channel.messages.add(message[1], channel));
+                });
+            });
+        }
+        if( message[0] == "ChatMessageReactionAdded") {
+            this.emit('reactionAdded', message[1]);
+        }
     }
 
     ToMessageData( message ) {
@@ -222,6 +232,26 @@ class GuildedClient {
             .then(function (response) {
             //console.log(JSON.stringify(response.data));
             return response.data.team;
+            })
+            .catch(function (error) {
+            console.log(error);
+            });
+    }
+
+    self() {
+        var config = {
+            method: 'get',
+            url: 'https://api.guilded.gg/me',
+            headers: { 
+            'Content-Type': 'application/json', 
+            'Cookie': this.cookies
+            }
+        };
+
+        return axios(config)
+            .then(function (response) {
+            //console.log(JSON.stringify(response.data));
+            return response.data;
             })
             .catch(function (error) {
             console.log(error);

@@ -1,17 +1,16 @@
 const axios = require("axios");
-const Channel = require('./Channel.js');
 
 class Message {
-    constructor(client, message) {
+    constructor(client, message, channel) {
         this.client = client;
-        //this.channel = new Channel(client, message["channelId"]);
-        this.channel = client.channels.add(message);
+        this.channel = channel;
 
         this.guildedClientId = message["guildedClientId"];
         this.id = message["contentId"];
         this.contentType = message["contentType"];
         this.message = message["message"];
         this.teamId = message["teamId"];
+        this.authorId = message["creatyBy"];
     }
 
     react(reaction) {
@@ -61,10 +60,21 @@ class Message {
         if(!this.message.content.document.nodes[n-1]) return;
         var lineType = this.message.content.document.nodes[n-1].type;
 
-        var content;
+        var content = "";
 
         if(lineType == "paragraph") {
-            content = this.message.content.document.nodes[n-1].nodes[0].leaves[0].text;
+            this.message.content.document.nodes[n-1].nodes.forEach(element => {
+                console.log(element);
+                if(element.object == "text") {
+                    content += element.leaves[0].text;
+                }
+                if(element.object == "inline") {
+                    if(element.type == "mention") {
+                        content += element.nodes[0].leaves[0].text;
+                    }
+                }
+            });
+            //content = this.message.content.document.nodes[n-1].nodes[0].leaves[0].text;
         }
         if(lineType == "markdown-plain-text") {
             content = this.message.content.document.nodes[n-1].nodes[0].leaves[0].text;

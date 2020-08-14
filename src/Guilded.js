@@ -12,12 +12,13 @@ class GuildedClient {
         this.cookies = "";
         this.channels = new ChannelManager(this);
         this.teams = new TeamManager(this);
+        this.id = "";
     }
   
     login(email, password) {
 
         var self = this;
-        var data = JSON.stringify({"email":"mneale72f71@gmail.com","password":"Gam9fr9ej7"});
+        var data = JSON.stringify({"email":email,"password":password});
 
         var config = {
             method: 'post',
@@ -31,6 +32,8 @@ class GuildedClient {
         axios(config)
             .then(function (response) {
                 self.cookies = "";
+                self.id = response.data.user.id;
+                console.log(response.data.user.id);
 
                 response["headers"]["set-cookie"].forEach(function (element) {
                     self.cookies += element.split(" ")[0];
@@ -52,7 +55,6 @@ class GuildedClient {
                 }
 
                 self.ws.on('message', function incoming(data) {
-                
                     var msg = data;
 
                     for(var i=0; i<data.length; i++) {

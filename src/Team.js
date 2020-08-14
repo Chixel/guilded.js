@@ -18,6 +18,13 @@ class Team {
         this.members = team["members"];
         this.channels = new ChannelManager(this.client);
 
+        //get all the channels for this team
+        /*this.getChannels().then((channels) => {
+            channels.forEach(channel => {
+                this.channels.add(channel.id, this);
+            });
+        });*/
+
         //manage websocket
         this.ws = new WebSocket('wss://api.guilded.gg/socket.io/?teamId='+ this.id +'&EIO=3&transport=websocket', {headers:{cookie: this.client.cookies}});
 
@@ -57,6 +64,28 @@ class Team {
                 channel.description = message[1].channel.description;
             });
         }
+    }
+
+    async getChannels() {
+        var config = {
+            method: 'get',
+            url: 'https://api.guilded.gg/teams/'+ this.id +'/channels',
+            headers: {
+                'Content-Type': 'application/json', 
+                'Cookie': this.client.cookies
+            }
+        };
+
+        var self = this;
+
+        return axios(config)
+            .then(function (response) {
+                //console.log(JSON.stringify(response.data));
+                return response.data.channels;
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
     }
 }
 

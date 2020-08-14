@@ -1,17 +1,21 @@
 const axios = require("axios");
 const MessageManager = require("./MessageManager.js");
+//const PeerConnection = require('rtcpeerconnection');
 
 class Channel {
     constructor(client, channel, team) {
         this.client = client;
         this.team = team;
+        this.groupId = channel["groupId"];
         this.id = channel["id"];
-        this.name = channel["name"]
+        this.name = channel["name"];
         this.messages = new MessageManager(this.client, this);
     }
 
     async send(message) {
         var message = this.client.ToMessageData(message);
+
+        console.log(message);
 
         var config = {
             method: 'post',
@@ -54,6 +58,32 @@ class Channel {
         return await promise;
     }
 
+    async setName(name) {
+        var data = JSON.stringify({name: name});
+
+        var config = {
+            method: 'put',
+            url: 'https://api.guilded.gg/teams/'+ this.team.id +'/groups/'+ this.groupId +'/channels/'+ this.id +'/info',
+            headers: {
+                'Content-Type': 'application/json', 
+                'Cookie': this.client.cookies
+            },
+            data: data
+        };
+
+        var self = this;
+
+        return axios(config)
+            .then(function (response) {
+                //console.log(JSON.stringify(response.data));
+                self.name = name;
+                return self;
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
     connect() {
         this.GetVoiceInfo().then((info) => {
             //console.log(info);
@@ -73,6 +103,12 @@ class Channel {
                 .then(function (response) {
                     //console.log(JSON.stringify(response.data));
                     console.log(response.data);
+
+                    /*var iceServers = {
+                        iceServers: response.data.recvTransportOptions.iceServers
+                    };
+
+                    var rtcPeerConnection = new PeerConnection(iceServers);*/
 
                 })
                 .catch(function (error) {

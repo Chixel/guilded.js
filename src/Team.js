@@ -1,6 +1,7 @@
 const axios = require('axios');
 const ChannelManager = require('./ChannelManager.js');
 const WebSocket = require('ws');
+const RoleManager = require('./RoleManager.js');
 
 class Team {
     constructor(client, team) {
@@ -17,13 +18,7 @@ class Team {
         this.measurements = team["measurements"];
         this.members = team["members"];
         this.channels = new ChannelManager(this.client);
-
-        //get all the channels for this team
-        /*this.getChannels().then((channels) => {
-            channels.forEach(channel => {
-                this.channels.add(channel.id, this);
-            });
-        });*/
+        this.roles = new RoleManager(this.client, this, team["roles"]);
 
         //manage websocket
         this.ws = new WebSocket('wss://api.guilded.gg/socket.io/?teamId='+ this.id +'&EIO=3&transport=websocket', {headers:{cookie: this.client.cookies}});
@@ -86,7 +81,7 @@ class Team {
             .catch(function (error) {
                 console.log(error);
             });
-    }
+    }    
 }
 
 module.exports = Team;

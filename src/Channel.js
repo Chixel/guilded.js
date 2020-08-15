@@ -1,6 +1,7 @@
 const axios = require("axios");
 const MessageManager = require("./MessageManager.js");
-//const PeerConnection = require('rtcpeerconnection');
+const Peer = require('simple-peer');
+const wrtc = require('wrtc');
 
 class Channel {
     constructor(client, channel, team) {
@@ -102,13 +103,49 @@ class Channel {
             axios(config)
                 .then(function (response) {
                     //console.log(JSON.stringify(response.data));
-                    console.log(response.data);
+                    console.log(response.data.recvTransportOptions.iceServers);
 
                     /*var iceServers = {
                         iceServers: response.data.recvTransportOptions.iceServers
                     };
 
                     var rtcPeerConnection = new PeerConnection(iceServers);*/
+
+                    var peer = new Peer({
+                        wrtc: wrtc,
+                        config: {
+                            iceServers: [
+                                {
+                                    url: 'turn:global.turn.twilio.com:3478?transport=udp',
+                                    username: '9750c48c86898b52e47d8937b978bb763b28db6dadccccbb2ab2d4a85247a21c',
+                                    urls: 'turn:global.turn.twilio.com:3478?transport=udp',
+                                    credential: 'F11QNx+d5QUzBNOWqQ/ouXJFE/7yu6SpFiYMaUg0kZU='
+                                },
+                                {
+                                    url: 'turn:global.turn.twilio.com:3478?transport=tcp',
+                                    username: '9750c48c86898b52e47d8937b978bb763b28db6dadccccbb2ab2d4a85247a21c',
+                                    urls: 'turn:global.turn.twilio.com:3478?transport=tcp',
+                                    credential: 'F11QNx+d5QUzBNOWqQ/ouXJFE/7yu6SpFiYMaUg0kZU='
+                                }
+                            ]
+                        }
+                    })
+
+                    peer.on('connect', () => {
+                        console.log("rtc connected")
+                    })
+
+                    peer.on('data', data => {
+                        console.log(data, "nice")
+                    })
+
+                    peer.on('close', () => {
+                        console.log("rtc closed")
+                    })
+
+                    peer.on('error', err => {
+                        console.log(err)
+                    })
 
                 })
                 .catch(function (error) {
@@ -129,9 +166,29 @@ class Channel {
 
         return axios(config)
             .then(function (response) {
-                //console.log(JSON.stringify(response.data));
                 return response.data;
 
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+    async isThread() {
+        var config = {
+            method: 'get',
+            url: 'https://api.guilded.gg/content/route/metadata?route=//channels/'+ this.id +'/chat',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Cookie': this.client.cookies
+            }
+        };
+
+        return axios(config)
+            .then(function (response) {
+                var isThread = response.data.metadata.channel.includes("threadMessageId");
+                console.log(isThread);
+                return isThread;
             })
             .catch(function (error) {
                 console.log(error);

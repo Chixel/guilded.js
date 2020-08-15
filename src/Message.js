@@ -92,7 +92,7 @@ class Message {
         return content;
     }
 
-    reply(message) {
+    async reply(message) {
         var channelId = uuid();
 
         var message = JSON.parse(this.client.ToMessageData(message));
@@ -133,9 +133,10 @@ class Message {
 
         var self = this;
 
-        axios(config)
+        return axios(config)
             .then(function (response) {
                 //console.log(JSON.parse(message));
+                return response.data;
             })
             .catch(function (error) {
                 console.log(error);

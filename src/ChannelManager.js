@@ -34,6 +34,11 @@ class ChannelManager extends BaseManager {
                 console.log(error);
             });
     }
+
+    async fetch(channelId) {
+        var existing = this.cache.get(channelId);
+        return existing;
+    }
 }
 
 module.exports = ChannelManager;

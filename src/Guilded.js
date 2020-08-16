@@ -326,7 +326,28 @@ class GuildedClient {
             console.log(error);
             });
     }
-  
+
+    acceptInvite( inviteId ) {
+        var data = JSON.stringify({"type": "consume"});
+
+        var config = {
+            method: 'put',
+            url: 'https://api.guilded.gg/invites/'+ inviteId,
+            headers: { 
+            'Content-Type': 'application/json', 
+            'Cookie': this.cookies
+            },
+            data : data
+        };
+
+        axios(config)
+            .then(function (response) {
+                return;
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
 }
 
 util.inherits(GuildedClient, events.EventEmitter);

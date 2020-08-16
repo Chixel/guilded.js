@@ -77,7 +77,6 @@ class Message {
                     }
                 }
             });
-            //content = this.message.content.document.nodes[n-1].nodes[0].leaves[0].text;
         }
         if(lineType == "markdown-plain-text") {
             content = this.message.content.document.nodes[n-1].nodes[0].leaves[0].text;
@@ -112,14 +111,9 @@ class Message {
 
         initalMessage = JSON.stringify(initalMessage);
 
-        //console.log(message);
-        //console.log(initalMessage);
-
-        console.log(this.id +" "+ this.message.id);
-
         var data = '{"channelId":"'+channelId+'", "confirmed":false, "contentType":"chat", "initialThreadMessage":'+initalMessage+', "message":'+message+', "name":"idk", "threadMessageId":"'+this.id+'"}';
 
-        console.log(data);
+        //console.log(data);
 
         var config = {
             method: 'post',
@@ -135,32 +129,41 @@ class Message {
 
         return axios(config)
             .then(function (response) {
-                //console.log(JSON.parse(message));
-                return response.data;
+                return self.client.channels.add(response.data.thread.id, self.channel.team).then((channel) => {
+                    //var message = new Message(self.client, response.data, channel);
+                    //console.log(message);
+                    return channel;
+                    //console.log(channel)
+                });
+            })
+            .catch(function (error) {
+                console.log(error);
+                console.log("error", self);
+            });
+    }
+
+    editContent(message) {
+        var message = JSON.stringify( JSON.parse( this.client.ToMessageData(message) ) );
+
+        var config = {
+            method: 'put',
+            url: 'https://api.guilded.gg/channels/'+ this.channel.id +'/messages/'+ this.id,
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Cookie': this.client.cookies
+            },
+            data : message
+        };
+
+        var self = this;
+
+        axios(config)
+            .then(function (response) {
+                self.message = JSON.parse(message);
             })
             .catch(function (error) {
                 console.log(error);
             });
-
-        /*var returnMessage = [];
-
-        function onMessage(msg) {
-            if(msg.contentId == JSON.parse(message).messageId) {
-                returnMessage = msg;
-                self.client.removeListener("message", onMessage);
-            }
-        }
-
-        this.client.on("message", onMessage);
-
-        var promise = new Promise((resolve, reject) => {
-            (function waitForMessage(){
-                if (returnMessage["message"]) return resolve(returnMessage);
-                setTimeout(waitForMessage, 30);
-            })();
-        })
-
-        return await promise;*/
     }
 }
 

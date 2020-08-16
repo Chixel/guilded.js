@@ -26,7 +26,7 @@ class Team {
         var self = this;
                 
         this.ws.on('open', function open() {
-            console.log("team websocket connected");
+            //console.log("team websocket connected");
             heartbeat();
         });
     

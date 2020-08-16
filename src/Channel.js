@@ -8,15 +8,21 @@ class Channel {
         this.client = client;
         this.team = team;
         this.groupId = channel["groupId"];
+        this.type = channel["type"];
         this.id = channel["id"];
         this.name = channel["name"];
         this.messages = new MessageManager(this.client, this);
+        this.originatingChannelId = channel["originatingChannelId"];
+
+        if(channel.archivedAt != null) {
+            this.archived = true;
+        } else {
+            this.archived = false;
+        }
     }
 
     async send(message) {
         var message = this.client.ToMessageData(message);
-
-        console.log(message);
 
         var config = {
             method: 'post',
@@ -41,7 +47,7 @@ class Channel {
         var returnMessage = [];
 
         function onMessage(msg) {
-            if(msg.contentId == JSON.parse(message).messageId) {
+            if(msg.id == JSON.parse(message).messageId) {
                 returnMessage = msg;
                 self.client.removeListener("message", onMessage);
             }
@@ -79,6 +85,25 @@ class Channel {
                 //console.log(JSON.stringify(response.data));
                 self.name = name;
                 return self;
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+    async getMessages(limit) {
+        var config = {
+            method: 'get',
+            url: 'https://api.guilded.gg/channels/'+ this.id +'/messages?limit='+ limit,
+            headers: {
+                'Content-Type': 'application/json', 
+                'Cookie': this.client.cookies
+            }
+        };
+
+        return axios(config)
+            .then(function (response) {
+                return response.data;
             })
             .catch(function (error) {
                 console.log(error);
@@ -174,21 +199,19 @@ class Channel {
             });
     }
 
-    async isThread() {
+    archive() {
         var config = {
-            method: 'get',
-            url: 'https://api.guilded.gg/content/route/metadata?route=//channels/'+ this.id +'/chat',
-            headers: { 
+            method: 'put',
+            url: 'https://api.guilded.gg/teams/'+ this.team.id +'/groups/'+ this.groupId +'/channels/'+ this.id +'/archive',
+            headers: {
                 'Content-Type': 'application/json', 
                 'Cookie': this.client.cookies
             }
         };
 
-        return axios(config)
+        axios(config)
             .then(function (response) {
-                var isThread = response.data.metadata.channel.includes("threadMessageId");
-                console.log(isThread);
-                return isThread;
+                console.log(response.data);
             })
             .catch(function (error) {
                 console.log(error);

@@ -12,8 +12,9 @@ class Message {
         this.message = message["message"];
         this.teamId = message["teamId"];
         this.authorId = message["createdBy"];
-
         this.mentions = [];
+
+        this.content = this.toMessageFormat();
     }
 
     react(reaction) {
@@ -59,7 +60,74 @@ class Message {
         return await promise;
     }
 
-    getLineContent(n) {
+    toMessageFormat() {
+        var formattedMsg = [];
+        var content = this.message.content;
+
+        content.document.nodes.forEach((line) => {
+            //console.log(line.type);
+
+            var lineContent = {"lineType": line.type, "content": [], "text": ""};
+
+            if(line.type == "paragraph") {
+                line.nodes.forEach((node) => {
+                    if(node.object == "text") {
+                        lineContent.content.push( { "type": "text", "text": node.leaves[0].text } );
+                        lineContent.text += node.leaves[0].text;
+                    }
+                    if(node.object == "inline") {
+                        if(node.type == "mention") {
+                            this.mentions.push(node.data.mention);
+                            lineContent.content.push( { "type": "mention", "text": node.nodes[0].leaves[0].text, "mentionId": node.data.mention.id } );
+                            lineContent.text += node.nodes[0].leaves[0].text;
+                        }
+                        if(node.type == "reaction") {
+                            lineContent.content.push( { "type": "reaction", "text": node.nodes[0].leaves[0].text, "reactionId": node.data.reaction.id } );
+                            lineContent.text += node.nodes[0].leaves[0].text;
+                        }
+                    }
+                });
+            }
+
+            if(line.type == "block-quote-container") {
+                line.nodes.forEach((node) => {
+                    node.nodes.forEach((nodeLine) => {
+                        if(nodeLine.object == "text") {
+                            lineContent.content.push( { "type": "text", "text": nodeLine.leaves[0].text } );
+                            lineContent.text += nodeLine.leaves[0].text;
+                        }
+                        if(nodeLine.object == "inline") {
+                            if(nodeLine.type == "mention") {
+                                this.mentions.push(nodeLine.data.mention);
+                                lineContent.content.push( { "type": "mention", "text": nodeLine.nodes[0].leaves[0].text, "mentionId": nodeLine.data.mention.id } );
+                                lineContent.text += nodeLine.nodes[0].leaves[0].text;
+                            }
+                            if(nodeLine.type == "reaction") {
+                                lineContent.content.push( { "type": "reaction", "text": nodeLine.nodes[0].leaves[0].text, "reactionId": nodeLine.data.reaction.id } );
+                                lineContent.text += nodeLine.nodes[0].leaves[0].text;
+                            }
+                        }
+                    });
+                });
+            }
+
+            if(line.type == "markdown-plain-text") {
+                lineContent.content.push( { "type": "text", "text": line.nodes[0].leaves[0].text } );
+                lineContent.text += line.nodes[0].leaves[0].text;
+            }
+
+            if(line.type == "webhookMessage") {
+                lineContent.content.push( { "type": "embed", "content": line.data.embeds } );
+            }
+
+            formattedMsg.push( lineContent );
+        })
+
+        //console.log("----");
+        return formattedMsg;
+    }
+
+    /*getLineContent(n) {
         if(!this.message.content.document.nodes[n-1]) return;
         var lineType = this.message.content.document.nodes[n-1].type;
 
@@ -89,7 +157,7 @@ class Message {
         }
 
         return content;
-    }
+    }*/
 
     async reply(message) {
         var channelId = uuid();

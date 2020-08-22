@@ -138,12 +138,10 @@ class GuildedClient {
 
         parsedMessage += '{"messageId":"'+ uuid() +'","content":{"object":"value","document":{"object":"document","data":{},"nodes":[';
 
-        message.forEach( msg => {
-            
-            if( msg["type"] == "markdown" ) {
-            
-                parsedMessage += JSON.stringify(
-                    {
+        if(typeof message == "string") {
+
+            parsedMessage += JSON.stringify(
+                {
                     "object":"block",
                     "type":"markdown-plain-text",
                     "data":{
@@ -155,89 +153,120 @@ class GuildedClient {
                         "leaves":[
                             {
                                 "object":"leaf",
-                                "text":msg["content"]["text"],
+                                "text":message,
                                 "marks":[]
                             }
                         ]
                         }
                     ]
-                    });
-            
-            }
-            
-            if( msg["type"] == "paragraph" ) {
-            
-                parsedMessage += JSON.stringify(
-                    {
-                    "object":"block",
-                    "type":"paragraph",
-                    "data":{
-                        "isEmbedMessage":true
-                    },
-                    "nodes":[
-                        {
-                        "object":"text",
-                        "leaves":[
-                            {
-                            "object":"leaf",
-                            "text":msg["content"]["text"],
-                            "marks":[]
-                            }
-                        ]
-                        }
-                    ]
-                    });
-            
-            }
-            
-            if( msg["type"] == "embed" ) {
-            
-                parsedMessage += JSON.stringify(
-                    {
-                    "object":"block",
-                    "type":"webhookMessage",
-                    "data":{
-                        "embeds":[
-                            msg["content"]
-                        ]
-                    },
-                    "nodes":[]
-                    });
-            
-            }
+                }
+            );
 
-            if( msg["type"] == "quote" ) {
-            
-                parsedMessage += JSON.stringify(
-                    {
-                    "object":"block",
-                    "type":"block-quote-container",
-                    "data":{},
-                    "nodes":[
+            parsedMessage += ',';
+
+        } else {
+
+            message.forEach( msg => {
+                
+                if( msg["type"] == "markdown" ) {
+                
+                    parsedMessage += JSON.stringify(
                         {
-                            "object": "block",
-                            "type": "block-quote-line",
-                            "nodes": [
+                        "object":"block",
+                        "type":"markdown-plain-text",
+                        "data":{
+                            "isEmbedMessage":true
+                        },
+                        "nodes":[
+                            {
+                            "object":"text",
+                            "leaves":[
                                 {
-                                    "object": "text",
-                                    "leaves": [
-                                        {
-                                            "marks": [],
-                                            "objects": "leaf",
-                                            "text": "test"
-                                        }
-                                    ]
+                                    "object":"leaf",
+                                    "text":msg["content"]["text"],
+                                    "marks":[]
                                 }
                             ]
-                        }
-                    ]
+                            }
+                        ]
                     });
-            
-            }
-            
-            parsedMessage += ',';
-            
-        })
+                
+                }
+                
+                if( msg["type"] == "paragraph" ) {
+                
+                    parsedMessage += JSON.stringify(
+                        {
+                        "object":"block",
+                        "type":"paragraph",
+                        "data":{
+                            "isEmbedMessage":true
+                        },
+                        "nodes":[
+                            {
+                            "object":"text",
+                            "leaves":[
+                                {
+                                "object":"leaf",
+                                "text":msg["content"]["text"],
+                                "marks":[]
+                                }
+                            ]
+                            }
+                        ]
+                    });
+                
+                }
+                
+                if( msg["type"] == "embed" ) {
+                
+                    parsedMessage += JSON.stringify(
+                        {
+                        "object":"block",
+                        "type":"webhookMessage",
+                        "data":{
+                            "embeds":[
+                                msg["content"]
+                            ]
+                        },
+                        "nodes":[]
+                        });
+                
+                }
+
+                if( msg["type"] == "quote" ) {
+                
+                    parsedMessage += JSON.stringify(
+                        {
+                        "object":"block",
+                        "type":"block-quote-container",
+                        "data":{},
+                        "nodes":[
+                            {
+                                "object": "block",
+                                "type": "block-quote-line",
+                                "nodes": [
+                                    {
+                                        "object": "text",
+                                        "leaves": [
+                                            {
+                                                "marks": [],
+                                                "objects": "leaf",
+                                                "text": "test"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    });
+                
+                }
+                
+                parsedMessage += ',';
+                
+            })
+        }
 
         parsedMessage = parsedMessage.slice(0, -1);
         parsedMessage += ']}}}';

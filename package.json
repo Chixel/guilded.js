@@ -1,6 +1,6 @@
 {
   "name": "guilded.js",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A wrapper for the private guilded API",
   "main": "./src/Guilded.js",
   "scripts": {
@@ -18,8 +18,6 @@
   "homepage": "https://github.com/Chixel/guilded.js#readme",
   "dependencies": {
     "axios": "^0.19.2",
-    "peerjs": "^1.3.1",
-    "rtcpeerconnection": "^8.4.0",
     "simple-peer": "^9.7.2",
     "uuid-random": "^1.3.2",
     "wrtc": "^0.4.6",

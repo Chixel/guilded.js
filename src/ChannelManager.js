@@ -24,11 +24,9 @@ class ChannelManager extends BaseManager {
 
         return axios(config)
             .then(function (response) {
-                //console.log(JSON.stringify(response.data));
                 var channel = new Channel(self.client, response.data.metadata.channel, team);
                 self.cache.add(channelId, channel);
                 return channel;
-
             })
             .catch(function (error) {
                 console.log(error);

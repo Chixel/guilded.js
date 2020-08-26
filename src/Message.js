@@ -211,7 +211,7 @@ class Message {
     }
 
     editContent(message) {
-        var message = JSON.stringify( JSON.parse( this.client.ToMessageData(message) ) );
+        var message = this.client.ToMessageData(message);
 
         var config = {
             method: 'put',
@@ -228,6 +228,7 @@ class Message {
         axios(config)
             .then(function (response) {
                 self.message = JSON.parse(message);
+                self.content = self.toMessageFormat();
             })
             .catch(function (error) {
                 console.log(error);

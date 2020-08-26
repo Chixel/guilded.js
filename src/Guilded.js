@@ -39,6 +39,8 @@ class GuildedClient {
                     self.cookies += element.split(" ")[0];
                 });
 
+                self.cacheTeams();
+
                 self.ws = new WebSocket('wss://api.guilded.gg/socket.io/?jwt=undefined&EIO=3&transport=websocket', {headers:{cookie: self.cookies}});
                 
                 self.ws.on('open', function open() {
@@ -79,10 +81,33 @@ class GuildedClient {
 
     }
 
+    cacheTeams() {
+        var config = {
+            method: 'get',
+            url: 'https://api.guilded.gg/me',
+            headers: { 
+            'Content-Type': 'application/json', 
+            'Cookie': this.cookies
+            }
+        };
+
+        var self = this;
+
+        axios(config)
+            .then(function (response) {
+                response.data.teams.forEach((team) => {
+                    self.teams.add(team.id);
+                });
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
     MessageReceived( message ) {
         if( message[0] == "ChatMessageCreated") {
             if( message[1].channelType == "Team" ) {
-                this.teams.add(message[1]).then((team) => {
+                this.teams.add(message[1].teamId).then((team) => {
                     team.channels.add(message[1].channelId, team).then((channel) => {
                         channel.messages.add(message[1], channel);
 
@@ -108,14 +133,16 @@ class GuildedClient {
         }
 
         if( message[0] == "ChatMessageUpdated") {
-            this.teams.add(message[1]).then((team) => {
+            this.teams.add(message[1].teamId).then((team) => {
                 team.channels.add(message[1].channelId, team).then((channel) => {
                     var msg = channel.messages.add(message[1], channel);
                     msg.message = message[1].message;
+                    msg.content = msg.toMessageFormat();
                 });
                 this.channels.add(message[1].channelId, team).then((channel) => {
                     var msg = channel.messages.add(message[1], channel);
                     msg.message = message[1].message;
+                    msg.content = msg.toMessageFormat();
                 });
             });
         }
@@ -125,9 +152,10 @@ class GuildedClient {
         }
 
         if( message[0] == "TEAM_CHANNEL_ARCHIVED") {
-            this.teams.add(message[1]).then((team) => {
+            this.teams.add(message[1].teamId).then((team) => {
                 this.channels.add(message[1].channelId, team).then((channel) => {
                     channel.archived = true;
+                    this.emit('channelArchived', channel);
                 });
             });
         }

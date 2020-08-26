@@ -1,7 +1,7 @@
 const axios = require("axios");
 const MessageManager = require("./MessageManager.js");
-const Peer = require('simple-peer');
-const wrtc = require('wrtc');
+//const Peer = require('simple-peer');
+//const wrtc = require('wrtc');
 
 class Channel {
     constructor(client, channel, team) {
@@ -110,7 +110,7 @@ class Channel {
             });
     }
 
-    connect() {
+    /*connect() {
         this.GetVoiceInfo().then((info) => {
             //console.log(info);
             var data = JSON.stringify({"rtpCapabilities":{"codecs":[{"mimeType":"audio/opus","kind":"audio","preferredPayloadType":100,"clockRate":48000,"channels":2,"parameters":{"minptime":10,"useinbandfec":1},"rtcpFeedback":[{"type":"transport-cc","parameter":""}]},{"mimeType":"video/H264","kind":"video","preferredPayloadType":101,"clockRate":90000,"parameters":{"level-asymmetry-allowed":1,"packetization-mode":1,"profile-level-id":"42e01f"},"rtcpFeedback":[{"type":"goog-remb","parameter":""},{"type":"transport-cc","parameter":""},{"type":"ccm","parameter":"fir"},{"type":"nack","parameter":""},{"type":"nack","parameter":"pli"}]},{"mimeType":"video/rtx","kind":"video","preferredPayloadType":102,"clockRate":90000,"parameters":{"apt":101},"rtcpFeedback":[]}],"headerExtensions":[{"kind":"audio","uri":"urn:ietf:params:rtp-hdrext:sdes:mid","preferredId":1,"preferredEncrypt":false,"direction":"sendrecv"},{"kind":"video","uri":"urn:ietf:params:rtp-hdrext:sdes:mid","preferredId":1,"preferredEncrypt":false,"direction":"sendrecv"},{"kind":"audio","uri":"http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time","preferredId":4,"preferredEncrypt":false,"direction":"sendrecv"},{"kind":"video","uri":"http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time","preferredId":4,"preferredEncrypt":false,"direction":"sendrecv"},{"kind":"video","uri":"http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01","preferredId":5,"preferredEncrypt":false,"direction":"sendrecv"},{"kind":"video","uri":"http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07","preferredId":6,"preferredEncrypt":false,"direction":"sendrecv"},{"kind":"audio","uri":"urn:ietf:params:rtp-hdrext:ssrc-audio-level","preferredId":10,"preferredEncrypt":false,"direction":"sendrecv"},{"kind":"video","uri":"urn:3gpp:video-orientation","preferredId":11,"preferredEncrypt":false,"direction":"sendrecv"},{"kind":"video","uri":"urn:ietf:params:rtp-hdrext:toffset","preferredId":12,"preferredEncrypt":false,"direction":"sendrecv"}]},"wasMoved":false,"supportsVideo":false,"appType":"Desktop App"});
@@ -130,11 +130,11 @@ class Channel {
                     //console.log(JSON.stringify(response.data));
                     console.log(response.data.recvTransportOptions.iceServers);
 
-                    /*var iceServers = {
+                    var iceServers = {
                         iceServers: response.data.recvTransportOptions.iceServers
                     };
 
-                    var rtcPeerConnection = new PeerConnection(iceServers);*/
+                    var rtcPeerConnection = new PeerConnection(iceServers);
 
                     var peer = new Peer({
                         wrtc: wrtc,
@@ -197,7 +197,7 @@ class Channel {
             .catch(function (error) {
                 console.log(error);
             });
-    }
+    }*/
 
     archive() {
         var config = {

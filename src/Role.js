@@ -1,5 +1,3 @@
-const axios = require("axios");
-
 class Role {
     constructor(client, role, team) {
         this.client = client;

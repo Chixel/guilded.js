@@ -2,6 +2,7 @@ const axios = require('axios');
 const ChannelManager = require('./ChannelManager.js');
 const WebSocket = require('ws');
 const RoleManager = require('./RoleManager.js');
+const UserManager = require('./UserManager.js');
 
 class Team {
     constructor(client, team) {
@@ -16,9 +17,13 @@ class Team {
         this.description = team["description"];
         this.type = team["type"];
         this.measurements = team["measurements"];
-        this.members = team["members"];
         this.channels = new ChannelManager(this.client);
-        this.roles = new RoleManager(this.client, this, team["roles"]);
+        this.roles = new RoleManager(this.client, this, team["rolesById"]);
+        this.members = new UserManager(this.client);
+        
+        team["members"].forEach(user => {
+            this.members.addRaw(user);
+        });
 
         //manage websocket
         this.ws = new WebSocket('wss://api.guilded.gg/socket.io/?teamId='+ this.id +'&EIO=3&transport=websocket', {headers:{cookie: this.client.cookies}});
@@ -57,7 +62,29 @@ class Team {
             this.channels.add(message[1].channel.id, this.id).then((channel) => {
                 channel.name = message[1].channel.name;
                 channel.description = message[1].channel.description;
+
+                this.client.emit('channelUpdated', channel);
             });
+        }
+
+        if( message[0] == "TeamChannelCreated") {
+            this.channels.add(message[1].channel.id, this.id).then((channel) => {
+                this.client.emit('channelCreated', channel);
+            });
+        }
+
+        if( message[0] == "TeamChannelDeleted") {
+            this.channels.fetch(message[1].channelId).then((channel) => {
+                this.client.emit('channelDeleted', channel);
+            });
+        }
+
+        if( message[0] == "TeamMemberJoined") {
+            this.client.emit('memberJoined', message[1]);
+        }
+
+        if( message[0] == "TeamMemberRemoved") {
+            this.client.emit('memberRemoved', message[1]);
         }
     }
 

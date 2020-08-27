@@ -95,8 +95,34 @@ class GuildedClient {
 
         axios(config)
             .then(function (response) {
-                response.data.teams.forEach((team) => {
-                    self.teams.add(team.id);
+                response.data.teams.forEach((teamInfo) => {
+                    self.teams.add(teamInfo.id).then((team) => {
+                        self.cacheChannels(team);
+                    });
+                });
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+    cacheChannels(team) {
+        var config = {
+            method: 'get',
+            url: 'https://api.guilded.gg/teams/'+ team.id +'/channels',
+            headers: { 
+            'Content-Type': 'application/json', 
+            'Cookie': this.cookies
+            }
+        };
+
+        var self = this;
+
+        axios(config)
+            .then(function (response) {
+                response.data.channels.forEach((channel) => {
+                    self.channels.addRaw(channel, team);
+                    team.channels.addRaw(channel, team);
                 });
             })
             .catch(function (error) {

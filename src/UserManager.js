@@ -33,11 +33,11 @@ class UserManager extends BaseManager {
             });
     }
 
-    async addRaw(user) {
-        var existing = this.cache.get(user.id);
+    async addRaw(userInfo) {
+        var existing = this.cache.get(userInfo.id);
         if(existing) return existing;
 
-        var user = new User(this.client, user);
+        var user = new User(this.client, userInfo);
         this.cache.add(user.id, user);
         return user;
     }

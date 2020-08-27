@@ -33,6 +33,15 @@ class ChannelManager extends BaseManager {
             });
     }
 
+    async addRaw(channelInfo, team) {
+        var existing = this.cache.get(channelInfo.id);
+        if(existing) return existing;
+
+        var channel = new Channel(this.client, channelInfo, team);
+        this.cache.add(channelInfo.id, channel);
+        return channel;
+    }
+
     async fetch(channelId) {
         var existing = this.cache.get(channelId);
         return existing;

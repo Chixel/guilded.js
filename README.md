@@ -1,6 +1,6 @@
 # What is guilded.js ?
 
-Guilded.js is a wrapper for guilded's (currently private) API.
+Guilded.js is a wrapper for guilded's user API.
 
 # Installation
 

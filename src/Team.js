@@ -21,6 +21,9 @@ class Team {
         this.roles = new RoleManager(this.client, this, team["rolesById"]);
         this.members = new UserManager(this.client);
         
+        this.cacheChannels();
+		this.cacheMembers(team.members);
+
         team["members"].forEach(user => {
             this.members.addRaw(user);
         });
@@ -59,7 +62,7 @@ class Team {
 
     MessageReceived( message ) {
         if( message[0] == "TeamChannelUpdated" ) {
-            this.channels.add(message[1].channel.id, this.id).then((channel) => {
+            this.channels.fetch(message[1].channel.id, this.id).then((channel) => {
                 channel.name = message[1].channel.name;
                 channel.description = message[1].channel.description;
 
@@ -67,24 +70,31 @@ class Team {
             });
         }
 
-        if( message[0] == "TeamChannelCreated") {
-            this.channels.add(message[1].channel.id, this.id).then((channel) => {
-                this.client.emit('channelCreated', channel);
-            });
-        }
+        switch(message[0]) {
+            case "TeamChannelCreated":
+                this.client.channels.addRaw(message[1].channel, this).then((channel) => {
+                    this.client.emit('channelCreated', channel);
+                });
 
-        if( message[0] == "TeamChannelDeleted") {
-            this.channels.fetch(message[1].channelId).then((channel) => {
-                this.client.emit('channelDeleted', channel);
-            });
-        }
+                this.channels.addRaw(message[1].channel, this).then((channel) => {
+                    this.client.emit('channelCreated', channel);
+                });
 
-        if( message[0] == "TeamMemberJoined") {
-            this.client.emit('memberJoined', message[1]);
-        }
+                break;
+            case "TeamChannelDeleted":
+                this.channels.fetch(message[1].channelId).then((channel) => {
+                    this.client.emit('channelDeleted', channel);
+                });
 
-        if( message[0] == "TeamMemberRemoved") {
-            this.client.emit('memberRemoved', message[1]);
+                break;
+            case "TeamMemberJoined":
+                this.client.emit('memberJoined', message[1]);
+
+                break;
+            case "TeamMemberRemoved":
+                this.client.emit('memberRemoved', message[1]);
+
+                break;
         }
     }
 
@@ -98,17 +108,51 @@ class Team {
             }
         };
 
-        var self = this;
-
         return axios(config)
             .then(function (response) {
-                //console.log(JSON.stringify(response.data));
                 return response.data.channels;
             })
             .catch(function (error) {
                 console.log(error);
             });
-    }    
+    }
+
+    cacheChannels() {
+        this.getChannels().then((channels) => {
+            channels.forEach((channel) => {
+                this.client.channels.addRaw(channel, this);
+                this.channels.addRaw(channel, this);
+            });
+        });
+    }
+
+	cacheMembers(members) {
+		members.forEach(user => {
+            this.members.addRaw(user);
+        });
+	}
+
+    async createInvite() {
+        var data = JSON.stringify({"teamId": this.id});
+
+        var config = {
+            method: 'post',
+            url: 'https://api.guilded.gg/teams/'+ this.id +'/invites',
+            headers: {
+                'Content-Type': 'application/json', 
+                'Cookie': this.client.cookies
+            },
+            data: data
+        };
+
+        return axios(config)
+            .then(function (response) {
+                return response.data.invite.id;
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
 }
 
 module.exports = Team;

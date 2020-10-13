@@ -7,7 +7,7 @@ class ChannelManager extends BaseManager {
         super(client);
     }
 
-    async add(channelId, team) {
+    /*async add(channelId, team) {
         var existing = this.cache.get(channelId);
         if(existing) return existing;
 
@@ -31,7 +31,7 @@ class ChannelManager extends BaseManager {
             .catch(function (error) {
                 console.log(error);
             });
-    }
+    }*/
 
     async addRaw(channelInfo, team) {
         var existing = this.cache.get(channelInfo.id);
@@ -43,8 +43,8 @@ class ChannelManager extends BaseManager {
     }
 
     async fetch(channelId) {
-        var existing = this.cache.get(channelId);
-        return existing;
+        var channel = this.cache.get(channelId);
+        return channel;
     }
 }
 

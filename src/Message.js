@@ -10,8 +10,11 @@ class Message {
         this.id = message["contentId"];
         this.contentType = message["contentType"];
         this.message = message["message"];
-        this.teamId = message["teamId"];
-        this.authorId = message["createdBy"];
+		this.team = channel.team;
+		channel.team.members.fetch(message["createdBy"]).then((user) => {
+			this.author = user;
+		});
+
         this.mentions = [];
 
         this.content = this.toMessageFormat();
@@ -65,65 +68,92 @@ class Message {
         var content = this.message.content;
 
         content.document.nodes.forEach((line) => {
-            //console.log(line.type);
-
             var lineContent = {"lineType": line.type, "content": [], "text": ""};
 
-            if(line.type == "paragraph") {
-                line.nodes.forEach((node) => {
-                    if(node.object == "text") {
-                        lineContent.content.push( { "type": "text", "text": node.leaves[0].text } );
-                        lineContent.text += node.leaves[0].text;
-                    }
-                    if(node.object == "inline") {
-                        if(node.type == "mention") {
-                            this.mentions.push(node.data.mention);
-                            lineContent.content.push( { "type": "mention", "text": node.nodes[0].leaves[0].text, "mentionId": node.data.mention.id } );
-                            lineContent.text += node.nodes[0].leaves[0].text;
-                        }
-                        if(node.type == "reaction") {
-                            lineContent.content.push( { "type": "reaction", "text": node.nodes[0].leaves[0].text, "reactionId": node.data.reaction.id } );
-                            lineContent.text += node.nodes[0].leaves[0].text;
-                        }
-                    }
-                });
-            }
+            switch(line.type) {
+                case "paragraph":
+                    line.nodes.forEach((node) => {
+                        switch(node.object) {
+                            case "text":
+								node.leaves.forEach((leaf) => {
+									lineContent.content.push( { "type": "text", "text": leaf.text } );
+                                	lineContent.text += leaf.text;
+								});
+                                
+                                break;
+                            case "inline":
+								node.nodes[0].leaves.forEach((leaf) => {
+									if(node.type == "mention") {
+										this.mentions.push(node.data.mention);
+										lineContent.content.push( { "type": "mention", "text": leaf.text, "mentionId": node.data.mention.id } );
+										lineContent.text += leaf.text.text;
+									}
+									if(node.type == "reaction") {
+										lineContent.content.push( { "type": "reaction", "text": leaf.text, "reactionId": node.data.reaction.id } );
+										lineContent.text += leaf.text;
+									}
+									if(node.type == "channel") {
+										this.mentions.push(node.data.channel);
+										lineContent.content.push( { "type": "mention", "text": leaf.text, "mentionedChannelId": node.data.channel.id } );
+										lineContent.text += leaf.text;
+									}
+								});
 
-            if(line.type == "block-quote-container") {
-                line.nodes.forEach((node) => {
-                    node.nodes.forEach((nodeLine) => {
-                        if(nodeLine.object == "text") {
-                            lineContent.content.push( { "type": "text", "text": nodeLine.leaves[0].text } );
-                            lineContent.text += nodeLine.leaves[0].text;
-                        }
-                        if(nodeLine.object == "inline") {
-                            if(nodeLine.type == "mention") {
-                                this.mentions.push(nodeLine.data.mention);
-                                lineContent.content.push( { "type": "mention", "text": nodeLine.nodes[0].leaves[0].text, "mentionId": nodeLine.data.mention.id } );
-                                lineContent.text += nodeLine.nodes[0].leaves[0].text;
-                            }
-                            if(nodeLine.type == "reaction") {
-                                lineContent.content.push( { "type": "reaction", "text": nodeLine.nodes[0].leaves[0].text, "reactionId": nodeLine.data.reaction.id } );
-                                lineContent.text += nodeLine.nodes[0].leaves[0].text;
-                            }
+                                break;
                         }
                     });
-                });
-            }
+                
+                    break;
+                case "block-quote-container":
+                    line.nodes.forEach((node) => {
+                        node.nodes.forEach((nodeLine) => {
+                            switch(nodeLine.object) {
+                                case "text":
+                                    lineContent.content.push( { "type": "text", "text": nodeLine.leaves[0].text } );
+                                    lineContent.text += nodeLine.leaves[0].text;
+                                
+                                    break;
+                                case "inline":
+                                    switch(nodeLine.type) {
+                                        case "mention":
+                                            this.mentions.push(nodeLine.data.mention);
+                                            lineContent.content.push( { "type": "mention", "text": nodeLine.nodes[0].leaves[0].text, "mentionId": nodeLine.data.mention.id } );
+                                            lineContent.text += nodeLine.nodes[0].leaves[0].text;
+                                        
+                                            break;
+                                        case "reaction":
+                                            lineContent.content.push( { "type": "reaction", "text": nodeLine.nodes[0].leaves[0].text, "reactionId": nodeLine.data.reaction.id } );
+                                            lineContent.text += nodeLine.nodes[0].leaves[0].text;
+                                        
+                                            break;
+                                        case "channel":
+                                            this.mentions.push(nodeLine.data.channel);
+                                            lineContent.content.push( { "type": "mention", "text": nodeLine.nodes[0].leaves[0].text, "mentionedChannelId": nodeLine.data.channel.id } );
+                                            lineContent.text += nodeLine.nodes[0].leaves[0].text;
+                                        
+                                            break;
+                                    }
+                                
+                                    break;
+                            }
+                        });
+                    });
+                
+                    break;
+                case "markdown-plain-text":
+                    lineContent.content.push( { "type": "text", "text": line.nodes[0].leaves[0].text } );
+                    lineContent.text += line.nodes[0].leaves[0].text;
 
-            if(line.type == "markdown-plain-text") {
-                lineContent.content.push( { "type": "text", "text": line.nodes[0].leaves[0].text } );
-                lineContent.text += line.nodes[0].leaves[0].text;
-            }
-
-            if(line.type == "webhookMessage") {
-                lineContent.content.push( { "type": "embed", "content": line.data.embeds } );
+                    break;
+                case "webhookMessage":
+                    lineContent.content.push( { "type": "embed", "content": line.data.embeds } );
+                
+                    break;
             }
 
             formattedMsg.push( lineContent );
-        })
+        });
 
-        //console.log("----");
         return formattedMsg;
     }
 
@@ -159,7 +189,7 @@ class Message {
         return content;
     }*/
 
-    async reply(message) {
+    async reply(message, threadName) {
         var channelId = uuid();
 
         var message = JSON.parse(this.client.ToMessageData(message));
@@ -179,9 +209,7 @@ class Message {
 
         initalMessage = JSON.stringify(initalMessage);
 
-        var data = '{"channelId":"'+channelId+'", "confirmed":false, "contentType":"chat", "initialThreadMessage":'+initalMessage+', "message":'+message+', "name":"idk", "threadMessageId":"'+this.id+'"}';
-
-        //console.log(data);
+        var data = '{"channelId":"'+channelId+'", "confirmed":false, "contentType":"chat", "initialThreadMessage":'+initalMessage+', "message":'+message+', "name":"'+threadName+'", "threadMessageId":"'+this.id+'"}';
 
         var config = {
             method: 'post',
@@ -195,19 +223,33 @@ class Message {
 
         var self = this;
 
-        return axios(config)
+        axios(config)
             .then(function (response) {
-                return self.client.channels.add(response.data.thread.id, self.channel.team).then((channel) => {
-                    //var message = new Message(self.client, response.data, channel);
-                    //console.log(message);
-                    return channel;
-                    //console.log(channel)
-                });
             })
             .catch(function (error) {
                 console.log(error);
-                console.log("error", self);
             });
+
+
+        var returnChannel;
+
+        function onChannel(channel) {
+            if(channel.id == channelId) {
+                returnChannel = channel;
+                self.client.removeListener("channelCreated", onChannel);
+            }
+        }
+
+        this.client.on("channelCreated", onChannel);
+
+        var promise = new Promise((resolve, reject) => {
+            (function waitForChannel(){
+                if (returnChannel != undefined) return resolve(returnChannel);
+                setTimeout(waitForChannel, 30);
+            })();
+        })
+
+        return await promise;
     }
 
     editContent(message) {

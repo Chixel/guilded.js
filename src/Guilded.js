@@ -5,7 +5,8 @@ const uuid = require("uuid-random");
 const WebSocket = require('ws');
 
 const ChannelManager = require('./ChannelManager.js')
-const TeamManager = require('./TeamManager.js')
+const TeamManager = require('./TeamManager.js');
+const Post = require('./Post.js');
 
 class GuildedClient {
     constructor() {
@@ -33,12 +34,12 @@ class GuildedClient {
             .then(function (response) {
                 self.cookies = "";
                 self.id = response.data.user.id;
-                //console.log(response.data.user.id);
 
                 response["headers"]["set-cookie"].forEach(function (element) {
                     self.cookies += element.split(" ")[0];
                 });
 
+                self.cacheDMChannels();
                 self.cacheTeams();
 
                 self.ws = new WebSocket('wss://api.guilded.gg/socket.io/?jwt=undefined&EIO=3&transport=websocket', {headers:{cookie: self.cookies}});
@@ -97,7 +98,7 @@ class GuildedClient {
             .then(function (response) {
                 response.data.teams.forEach((teamInfo) => {
                     self.teams.add(teamInfo.id).then((team) => {
-                        self.cacheChannels(team);
+                        //self.cacheChannels(team);
                     });
                 });
             })
@@ -106,13 +107,13 @@ class GuildedClient {
             });
     }
 
-    cacheChannels(team) {
+    /*cacheChannels(team) {
         var config = {
             method: 'get',
             url: 'https://api.guilded.gg/teams/'+ team.id +'/channels',
             headers: { 
-            'Content-Type': 'application/json', 
-            'Cookie': this.cookies
+                'Content-Type': 'application/json', 
+                'Cookie': this.cookies
             }
         };
 
@@ -128,62 +129,104 @@ class GuildedClient {
             .catch(function (error) {
                 console.log(error);
             });
+    }*/
+
+    cacheDMChannels() {
+        var config = {
+            method: 'get',
+            url: 'https://api.guilded.gg/users/'+ this.id +'/channels',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Cookie': this.cookies
+            }
+        };
+
+        var self = this;
+
+        axios(config)
+            .then(function (response) {
+                response.data.channels.forEach((channel) => {
+                    self.channels.addRaw(channel, null);
+                });
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
     }
 
-    MessageReceived( message ) {
-        if( message[0] == "ChatMessageCreated") {
-            if( message[1].channelType == "Team" ) {
-                this.teams.add(message[1].teamId).then((team) => {
-                    team.channels.add(message[1].channelId, team).then((channel) => {
-                        channel.messages.add(message[1], channel);
+    MessageReceived(message) {
+        switch(message[0]) {
+            case "ChatMessageCreated":
+                switch(message[1].channelType) {
+                    case "Team":
+                        this.channels.fetch(message[1].channelId).then((channel) => {
+                            if(channel == null) return;
 
-                        this.channels.add(message[1].channelId, team).then((channel) => {
-                            if(channel.originatingChannelId == null) {
-                                this.emit('message', channel.messages.add(message[1], channel));
-                            } else {
-                                channel.getMessages(4).then((messageList) => {
-                                    if(messageList.hasPastMessages) {
-                                        console.log("hasPastMessages");
-                                        this.emit('message', channel.messages.add(message[1], channel));
-                                    }
-                                })
-                            }
+                            channel.messages.add(message[1], channel).then((message) => {
+                                this.emit('message', message);
+                            });
+
+                            this.teams.fetch(message[1].teamId).then((team) => {
+                                team.channels.fetch(message[1].channelId).then((teamChannel) => {
+                                    teamChannel.messages.add(message[1], teamChannel);
+                                });
+                            });
+                        });
+
+                        break;
+                    case "DM":
+                        this.channels.fetch(message[1].channelId).then((channel) => {
+                            channel.messages.add(message[1], channel).then((message) => {
+                                this.emit('message', message);
+                            });
+                        });
+
+                        break;
+                }
+
+                break;
+            case "ChatMessageUpdated":
+                this.teams.fetch(message[1].teamId).then((team) => {
+                    this.channels.fetch(message[1].channelId, team).then((channel) => {
+                        channel.messages.add(message[1]).then((msg) => {
+                            msg.message = message[1].message;
+                            msg.content = msg.toMessageFormat();
+
+                            this.emit('messageEdited', msg);
+                        });
+                    });
+
+                    team.channels.fetch(message[1].channelId, team).then((channel) => {
+                        channel.messages.add(message[1]).then((msg) => {
+                            msg.message = message[1].message;
+                            msg.content = msg.toMessageFormat();
                         });
                     });
                 });
-            } else if( message[1]. channelType == "DM" ) {
-                this.channels.add(message[1].channelId, null).then((channel) => {
-                    this.emit('message', channel.messages.add(message[1], channel));
-                });
-            }
-        }
 
-        if( message[0] == "ChatMessageUpdated") {
-            this.teams.add(message[1].teamId).then((team) => {
-                team.channels.add(message[1].channelId, team).then((channel) => {
-                    var msg = channel.messages.add(message[1], channel);
-                    msg.message = message[1].message;
-                    msg.content = msg.toMessageFormat();
+                break;
+            case "ChatMessageReactionAdded":
+                this.emit('reactionAdded', message[1]);
+            
+                break;
+            case "TEAM_CHANNEL_ARCHIVED":
+                this.teams.fetch(message[1].teamId).then((team) => {
+                    this.channels.fetch(message[1].channelId, team).then((channel) => {
+                        channel.archived = true;
+                        this.emit('channelArchived', channel);
+                    });
                 });
-                this.channels.add(message[1].channelId, team).then((channel) => {
-                    var msg = channel.messages.add(message[1], channel);
-                    msg.message = message[1].message;
-                    msg.content = msg.toMessageFormat();
+            
+                break;
+            case "TemporalChannelCreated":
+                this.teams.fetch(message[1].teamId).then((team) => {
+                    this.channels.addRaw(message[1].channel, team).then((channel) => {
+                        this.emit('channelCreated', channel);
+                    });
+                    team.channels.addRaw(message[1].channel, team);
                 });
-            });
-        }
 
-        if( message[0] == "ChatMessageReactionAdded") {
-            this.emit('reactionAdded', message[1]);
-        }
-
-        if( message[0] == "TEAM_CHANNEL_ARCHIVED") {
-            this.teams.add(message[1].teamId).then((team) => {
-                this.channels.add(message[1].channelId, team).then((channel) => {
-                    channel.archived = true;
-                    this.emit('channelArchived', channel);
-                });
-            });
+                break;
         }
     }
 
@@ -423,9 +466,60 @@ class GuildedClient {
             data : data
         };
 
+        var self = this;
+
         axios(config)
             .then(function (response) {
-                return;
+                self.teams.add(response.data.teamId);
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+    async getInviteTeam(inviteId) {
+        var data = JSON.stringify({"type": "consume"});
+
+        var config = {
+            method: 'get',
+            url: 'https://api.guilded.gg/invites/'+ inviteId +'/team',
+            headers: { 
+            'Content-Type': 'application/json', 
+            'Cookie': this.cookies
+            },
+            data : data
+        };
+
+        return axios(config)
+            .then(function (response) {
+                //TODO: cache team and return cached team
+                return response.data.team;
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+    getUserPosts(userId) {
+
+        var config = {
+            method: 'get',
+            url: 'https://api.guilded.gg/users/'+ userId +'/posts',
+            headers: { 
+            'Content-Type': 'application/json', 
+            'Cookie': this.cookies
+            }
+        };
+
+        var self = this;
+
+        return axios(config)
+            .then(function (response) {
+                var posts = [];
+                response.data.forEach((post) => {
+                    posts.push( new Post(self, post) );
+                });
+                return posts;
             })
             .catch(function (error) {
                 console.log(error);

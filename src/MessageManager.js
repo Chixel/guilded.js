@@ -7,12 +7,17 @@ class MessageManager extends BaseManager {
         this.channel = channel
     }
 
-    add(data) {
+    async add(data) {
         var existing = this.cache.get(data.channelId);
         if(existing) return existing;
 
         var message = new Message(this.client, data, this.channel);
         this.cache.add(data.id, message);
+        return message;
+    }
+
+    async fetch(messageId) {
+        var message = this.cache.get(messageId);
         return message;
     }
 }

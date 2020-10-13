@@ -82,7 +82,6 @@ class Channel {
 
         return axios(config)
             .then(function (response) {
-                //console.log(JSON.stringify(response.data));
                 self.name = name;
                 return self;
             })
@@ -211,7 +210,7 @@ class Channel {
 
         axios(config)
             .then(function (response) {
-                console.log(response.data);
+                //console.log(response.data);
             })
             .catch(function (error) {
                 console.log(error);

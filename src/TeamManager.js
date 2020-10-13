@@ -24,11 +24,9 @@ class TeamManager extends BaseManager {
 
         return axios(config)
             .then(function (response) {
-                //console.log(JSON.stringify(response.data));
                 var team = new Team(self.client, response.data.team);
                 self.cache.add(teamId, team);
                 return team;
-
             })
             .catch(function (error) {
                 console.log(error);
@@ -42,6 +40,11 @@ class TeamManager extends BaseManager {
         var team = new Team(this.client, teamInfo);
         team.id = teamInfo.id;
         this.cache.add(teamInfo.id, team);
+    }
+
+    async fetch(teamId) {
+        var team = this.cache.get(teamId);
+        return team;
     }
 }
 

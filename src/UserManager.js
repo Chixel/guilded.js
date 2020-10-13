@@ -15,8 +15,8 @@ class UserManager extends BaseManager {
             method: 'get',
             url: 'https://api.guilded.gg/users/'+ userId,
             headers: { 
-            'Content-Type': 'application/json', 
-            'Cookie': this.client.cookies
+            	'Content-Type': 'application/json', 
+            	'Cookie': this.client.cookies
             }
         };
 
@@ -43,8 +43,8 @@ class UserManager extends BaseManager {
     }
 
     async fetch(userId) {
-        var existing = this.cache.get(userId);
-        return existing;
+        var user = this.cache.get(userId);
+        return user;
     }
 }
 
